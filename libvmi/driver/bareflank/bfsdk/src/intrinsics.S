@@ -162,7 +162,7 @@ _mv_vm_state_op_map_range:
         .size _mv_vm_state_op_map_range, .-_mv_vm_state_op_map_range
 
 /* -------------------------------------------------------------------------- */
-/* _mv_vm_state_op_unmap_range                                                  */
+/* _mv_vm_state_op_unmap_range                                                */
 /* -------------------------------------------------------------------------- */
 
         .globl  _mv_vm_state_op_unmap_range
@@ -236,6 +236,40 @@ _mv_vp_state_op_msr_val:
         pop r12
         ret
         .size _mv_vp_state_op_msr_val, .-_mv_vp_state_op_msr_val
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_management_op_pause_vp                                              */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_management_op_pause_vp
+        .type   _mv_vp_management_op_pause_vp, @function
+_mv_vp_management_op_pause_vp:
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000080004
+        vmcall
+
+        ret
+        .size _mv_vp_management_op_pause_vp, .-_mv_vp_management_op_pause_vp
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_management_op_resume_vp                                             */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_management_op_resume_vp
+        .type   _mv_vp_management_op_resume_vp, @function
+_mv_vp_management_op_resume_vp:
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000080005
+        vmcall
+
+        ret
+        .size _mv_vp_management_op_resume_vp, .-_mv_vp_management_op_resume_vp
 
 /* -------------------------------------------------------------------------- */
 /* !!! WARNING DEPRECATED !!!                                                 */

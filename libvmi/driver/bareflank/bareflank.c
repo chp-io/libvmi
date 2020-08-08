@@ -529,14 +529,44 @@ status_t bareflank_get_memsize(
 }
 
 status_t bareflank_pause_vm(
-    vmi_instance_t UNUSED(vmi))
+    vmi_instance_t vmi)
 {
+    bareflank_instance_t *bf = bareflank_get_instance(vmi);
+    mv_status_t ret;
+
+    if (bf->domainid == 0) {
+        // FIXME pause VM
+        ret = mv_vp_management_op_pause_vp(&bf->handle, MV_VPID_PARENT);
+    } else {
+        // ret = mv_vm_management_op_pause_vm(&bf->handle, bf->domainid);
+        BF_DEBUG("bareflank_pause_vm: domU not yet supported\n");
+        exit(1);
+    }
+    if (ret != MV_STATUS_SUCCESS) {
+        BF_DEBUG("bareflank_pause_vm failed with 0x%lx\n", ret);
+        return VMI_FAILURE;
+    }
     return VMI_SUCCESS;
 }
 
 status_t bareflank_resume_vm(
-    vmi_instance_t UNUSED(vmi))
+    vmi_instance_t vmi)
 {
+    bareflank_instance_t *bf = bareflank_get_instance(vmi);
+    mv_status_t ret;
+
+    if (bf->domainid == 0) {
+        // FIXME resume VM
+        ret = mv_vp_management_op_resume_vp(&bf->handle, MV_VPID_PARENT);
+    } else {
+        // ret = mv_vm_management_op_resume_vm(&bf->handle, bf->domainid);
+        BF_DEBUG("bareflank_resume_vm: domU not yet supported\n");
+        exit(1);
+    }
+    if (ret != MV_STATUS_SUCCESS) {
+        BF_DEBUG("bareflank_pause_vm failed with 0x%lx\n", ret);
+        return VMI_FAILURE;
+    }
     return VMI_SUCCESS;
 }
 
