@@ -88,6 +88,13 @@ status_t bareflank_pause_vm(
 status_t bareflank_resume_vm(
     vmi_instance_t vmi);
 
+int
+bareflank_is_pv(
+    vmi_instance_t UNUSED(vmi))
+{
+    return 0;
+}
+
 static inline status_t
 driver_bareflank_setup(vmi_instance_t vmi)
 {
@@ -114,7 +121,7 @@ driver_bareflank_setup(vmi_instance_t vmi)
     driver.resume_vm_ptr = &bareflank_resume_vm;
 
     driver.write_ptr = &bareflank_write;
-    //driver.is_pv_ptr = &bareflank_is_pv;
+    driver.is_pv_ptr = &bareflank_is_pv;
     //driver.set_access_required_ptr = &xen_set_access_required;
     vmi->driver = driver;
     return VMI_SUCCESS;
