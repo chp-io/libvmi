@@ -192,6 +192,87 @@ _mv_vm_state_op_unmap_range:
         .size _mv_vm_state_op_unmap_range, .-_mv_vm_state_op_unmap_range
 
 /* -------------------------------------------------------------------------- */
+/* _mv_vm_state_op_gpa_flags                                                  */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vm_state_op_gpa_flags
+        .type   _mv_vm_state_op_gpa_flags, @function
+_mv_vm_state_op_gpa_flags:
+
+        push r12
+
+        mov r10, rdi
+        mov r11, rsi
+        mov r12, rdx
+
+        mov rax, 0x764D00000003000F
+        vmcall
+
+        mov [rcx], r10
+
+        pop r12
+        ret
+        .size _mv_vm_state_op_gpa_flags, .-_mv_vm_state_op_gpa_flags
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vm_state_op_set_gpa_flags                                              */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vm_state_op_set_gpa_flags
+        .type   _mv_vm_state_op_set_gpa_flags, @function
+_mv_vm_state_op_set_gpa_flags:
+
+        push r12
+        push r13
+
+        mov r10, rdi
+        mov r11, rsi
+        mov r12, rdx
+        mov r13, rcx
+
+        mov rax, 0x764D000000030010
+        vmcall
+
+        pop r13
+        pop r12
+        ret
+        .size _mv_vm_state_op_set_gpa_flags, .-_mv_vm_state_op_set_gpa_flags
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vm_management_op_pause_vm                                              */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vm_management_op_pause_vm
+        .type   _mv_vm_management_op_pause_vm, @function
+_mv_vm_management_op_pause_vm:
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000040002
+        vmcall
+
+        ret
+        .size _mv_vm_management_op_pause_vm, .-_mv_vm_management_op_pause_vm
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vm_management_op_resume_vm                                             */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vm_management_op_resume_vm
+        .type   _mv_vm_management_op_resume_vm, @function
+_mv_vm_management_op_resume_vm:
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000040003
+        vmcall
+
+        ret
+        .size _mv_vm_management_op_resume_vm, .-_mv_vm_management_op_resume_vm
+
+/* -------------------------------------------------------------------------- */
 /* _mv_vp_state_op_reg_val                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -270,6 +351,105 @@ _mv_vp_management_op_resume_vp:
 
         ret
         .size _mv_vp_management_op_resume_vp, .-_mv_vp_management_op_resume_vp
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_exit_op_vmread                                                      */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_exit_op_vmread
+        .type   _mv_vp_exit_op_vmread, @function
+_mv_vp_exit_op_vmread:
+
+        push r12
+
+        mov r10, rdi
+        mov r11, rsi
+        mov r12, rdx
+
+        mov rax, 0x764D000000090000
+        vmcall
+
+        mov [rcx],  r10
+
+        pop r12
+
+        ret
+        .size _mv_vp_exit_op_vmread, .-_mv_vp_exit_op_vmread
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_exit_op_vmwrite                                                     */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_exit_op_vmwrite
+        .type   _mv_vp_exit_op_vmwrite, @function
+_mv_vp_exit_op_vmwrite:
+
+        push r12
+        push r13
+        push r14
+
+        mov r10, rdi
+        mov r11, rsi
+        mov r12, rdx
+        mov r13, rcx
+        mov r14, r8
+
+        mov rax, 0x764D000000090001
+        vmcall
+
+        mov [r9],  r10
+
+        pop r14
+        pop r13
+        pop r12
+
+        ret
+        .size _mv_vp_exit_op_vmwrite, .-_mv_vp_exit_op_vmwrite
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_exit_op_next_exit                                                   */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_exit_op_next_exit
+        .type   _mv_vp_exit_op_next_exit, @function
+_mv_vp_exit_op_next_exit:
+
+        push r12
+        push r13
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000090002
+        vmcall
+
+        mov [rdx], r10
+        mov [rcx], r11
+        mov [r8],  r12
+        mov [r9],  r13
+
+        pop r13
+        pop r12
+
+        ret
+        .size _mv_vp_exit_op_next_exit, .-_mv_vp_exit_op_next_exit
+
+/* -------------------------------------------------------------------------- */
+/* _mv_vp_exit_op_end_of_exit                                                 */
+/* -------------------------------------------------------------------------- */
+
+        .globl  _mv_vp_exit_op_end_of_exit
+        .type   _mv_vp_exit_op_end_of_exit, @function
+_mv_vp_exit_op_end_of_exit:
+
+        mov r10, rdi
+        mov r11, rsi
+
+        mov rax, 0x764D000000090003
+        vmcall
+
+        ret
+        .size _mv_vp_exit_op_end_of_exit, .-_mv_vp_exit_op_end_of_exit
 
 /* -------------------------------------------------------------------------- */
 /* !!! WARNING DEPRECATED !!!                                                 */

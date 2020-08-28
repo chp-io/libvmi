@@ -534,12 +534,14 @@ status_t bareflank_pause_vm(
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
     mv_status_t ret;
 
+    BF_DEBUG("bareflank_pause_vm called\n");
+
     if (bf->domainid == 0) {
         // FIXME pause VM
         ret = mv_vp_management_op_pause_vp(&bf->handle, MV_VPID_PARENT);
     } else {
         // ret = mv_vm_management_op_pause_vm(&bf->handle, bf->domainid);
-        BF_DEBUG("bareflank_pause_vm: domU not yet supported\n");
+        BF_DEBUG("bareflank_pause_vm: domU not yet supported id %lu\n", bf->domainid);
         exit(1);
     }
     if (ret != MV_STATUS_SUCCESS) {
@@ -555,12 +557,14 @@ status_t bareflank_resume_vm(
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
     mv_status_t ret;
 
+    BF_DEBUG("bareflank_resume_vm called\n");
+
     if (bf->domainid == 0) {
         // FIXME resume VM
         ret = mv_vp_management_op_resume_vp(&bf->handle, MV_VPID_PARENT);
     } else {
         // ret = mv_vm_management_op_resume_vm(&bf->handle, bf->domainid);
-        BF_DEBUG("bareflank_resume_vm: domU not yet supported\n");
+        BF_DEBUG("bareflank_resume_vm: domU not yet supported id %lu\n", bf->domainid);
         exit(1);
     }
     if (ret != MV_STATUS_SUCCESS) {
@@ -617,16 +621,21 @@ bareflank_init(
 
 status_t bareflank_init_vmi(
     vmi_instance_t vmi,
-    uint32_t UNUSED(init_flags),
-    vmi_init_data_t* UNUSED(init_data))
+    uint32_t init_flags,
+    vmi_init_data_t* init_data)
 {
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
 
-    BF_DEBUG("--bareflank: setup live mode\n");
+    BF_DEBUG("setup live mode\n");
     memory_cache_destroy(vmi);
     memory_cache_init(vmi, bareflank_get_memory, bareflank_release_memory, 0);
 
     bf->remaps = g_hash_table_new_full(g_int64_hash, g_int64_equal, g_free, g_free);
+
+    // FIXME once IPIs are implemented in MicroV
+    vmi->num_vcpus = 1;
+
+    bareflank_init_events(vmi, init_flags, init_data);
 
     return VMI_SUCCESS;
 }
@@ -639,7 +648,8 @@ bareflank_destroy(
 
     if (!bf) return;
 
-    BF_DEBUG("--bareflank: shutting down driver\n");
+    BF_DEBUG("shutting down driver\n");
+    bareflank_destroy_events(vmi);
 
     if (mv_handle_op_close_handle(&bf->handle) != MV_STATUS_SUCCESS) {
         BF_DEBUG("mv_handle_op_close failed\n");
@@ -652,4 +662,11 @@ bareflank_destroy(
 
     g_free(bf);
     vmi->driver.driver_data = NULL;
+}
+
+int
+bareflank_is_pv(
+    vmi_instance_t UNUSED(vmi))
+{
+    return 0;
 }

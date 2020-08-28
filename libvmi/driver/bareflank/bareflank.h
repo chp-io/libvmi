@@ -88,12 +88,8 @@ status_t bareflank_pause_vm(
 status_t bareflank_resume_vm(
     vmi_instance_t vmi);
 
-int
-bareflank_is_pv(
-    vmi_instance_t UNUSED(vmi))
-{
-    return 0;
-}
+int bareflank_is_pv(
+    vmi_instance_t vmi);
 
 static inline status_t
 driver_bareflank_setup(vmi_instance_t vmi)

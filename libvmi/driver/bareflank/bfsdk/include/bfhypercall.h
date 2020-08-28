@@ -23,6 +23,7 @@
 #ifndef BFHYPERCALL_H
 #define BFHYPERCALL_H
 
+#define MV_EXCLUDE_DEPRECATED // FIXME
 #ifndef MV_EXCLUDE_DEPRECATED
 #include <bftypes.h>
 #include <bfmemory.h>
@@ -302,6 +303,36 @@ uint64_t
 _mv_vp_management_op_resume_vp(
     uint64_t const handle,
     uint64_t const vpid);
+
+uint64_t
+_mv_vp_exit_op_vmread(
+    uint64_t const handle,
+    uint64_t const vpid,
+    uint64_t const field,
+    uint64_t *const value);
+
+uint64_t
+_mv_vp_exit_op_vmwrite(
+    uint64_t const handle,
+    uint64_t const vpid,
+    uint64_t const field,
+    uint64_t const value,
+    uint64_t const mask,
+    uint64_t *const old_value);
+
+uint64_t
+_mv_vp_exit_op_next_exit(
+    uint64_t const handle,
+    uint64_t const flags,
+    uint64_t *const vpid,
+    uint64_t *const event,
+    uint64_t *const data0,
+    uint64_t *const data1);
+
+uint64_t
+_mv_vp_exit_op_end_of_exit(
+    uint64_t const handle,
+    uint64_t const flags);
 
 // -----------------------------------------------------------------------------
 // Scalar Types
@@ -620,6 +651,8 @@ mv_status_value(mv_status_t const status)
 #define MV_STATUS_INVALID_VPID_UNSUPPORTED_SELF ((mv_status_t)0xDEAD000000020009)
 #define MV_STATUS_INVALID_VPID_UNSUPPORTED_PARENT ((mv_status_t)0xDEAD000000040009)
 #define MV_STATUS_INVALID_VPID_UNSUPPORTED_ANY ((mv_status_t)0xDEAD000000080009)
+#define MV_STATUS_INVALID_EXIT_ALREADY_LISTENING ((mv_status_t)0xDEAD00000001000A)
+#define MV_STATUS_INVALID_EXIT_NO_LISTENER ((mv_status_t)0xDEAD00000002000A)
 
 // -----------------------------------------------------------------------------
 // Hypercall Inputs
@@ -1601,7 +1634,15 @@ enum mv_vp_exit_t {
     mv_vp_exit_t_hlt = 3,
     mv_vp_exit_t_fault = 4,
     mv_vp_exit_t_sync_tsc = 5,
-    mv_vp_exit_t_max = 6
+    mv_vp_exit_t_suspend = 6,
+    mv_vp_exit_t_timeout = 7,
+    mv_vp_exit_t_monitor_trap_flag = 8,
+    mv_vp_exit_t_ept_read_violation = 9,
+    mv_vp_exit_t_ept_write_violation = 10,
+    mv_vp_exit_t_ept_execute_violation = 11,
+    mv_vp_exit_t_cr3_load_exiting = 12,
+    mv_vp_exit_t_cr3_store_exiting = 13,
+    mv_vp_exit_t_max = 14
 };
 
 static inline mv_status_t
@@ -1678,6 +1719,95 @@ mv_vp_management_op_resume_vp(
     }
 
     return _mv_vp_management_op_resume_vp(handle->hndl, vpid);
+}
+
+// -----------------------------------------------------------------------------
+// mv_vp_exit_op_vmread
+// -----------------------------------------------------------------------------
+
+#define MV_VP_EXIT_OP_VMREAD_IDX_VAL ((mv_uint64_t)0x00000000000000000)
+
+static inline uint64_t
+mv_vp_exit_op_vmread(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const vpid,                       /* IN */
+    uint64_t const field,                      /* IN */
+    uint64_t *const value)                     /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_vmread(handle->hndl, vpid, field, value);
+}
+
+// -----------------------------------------------------------------------------
+// mv_vp_exit_op_vmwrite
+// -----------------------------------------------------------------------------
+
+#define MV_VP_EXIT_OP_VMWRITE_IDX_VAL ((mv_uint64_t)0x00000000000000001)
+
+static inline uint64_t
+mv_vp_exit_op_vmwrite(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const vpid,                       /* IN */
+    uint64_t const field,                      /* IN */
+    uint64_t const value,                      /* IN */
+    uint64_t const mask,                       /* IN */
+    uint64_t *const old_value)                 /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_vmwrite(
+        handle->hndl, vpid, field, value, mask, old_value);
+}
+
+// -----------------------------------------------------------------------------
+// mv_vp_exit_op_next_exit
+// -----------------------------------------------------------------------------
+
+#define MV_VP_EXIT_OP_NEXT_EXIT_IDX_VAL ((mv_uint64_t)0x00000000000000002)
+
+#define MV_VP_EXIT_OP_NEXT_EXIT_FLAGS_HAS_TIMEOUT (((mv_uint64_t)1) << 0)
+
+static inline uint64_t
+mv_vp_exit_op_next_exit(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const flags,                      /* IN */
+    uint64_t *const vpid,                      /* OUT */
+    uint64_t *const reason,                    /* OUT */
+    uint64_t *const data0,                     /* OUT */
+    uint64_t *const data1)                     /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_next_exit(
+        handle->hndl, flags, vpid, reason, data0, data1);
+}
+
+// -----------------------------------------------------------------------------
+// mv_vp_exit_op_end_of_exit
+// -----------------------------------------------------------------------------
+
+#define MV_VP_EXIT_OP_END_OF_EXIT_IDX_VAL ((mv_uint64_t)0x00000000000000003)
+
+#define MV_VP_EXIT_OP_END_OF_EXIT_FLAGS_HANDLED (((mv_uint64_t)1) << 0)
+#define MV_VP_EXIT_OP_END_OF_EXIT_FLAGS_ADVANCE (((mv_uint64_t)1) << 1)
+
+static inline uint64_t
+mv_vp_exit_op_end_of_exit(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const flags)                      /* IN */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_end_of_exit(handle->hndl, flags);
 }
 
 // =============================================================================
@@ -2293,6 +2423,7 @@ hypercall_vcpu_op__destroy_vcpu(vcpuid_t vcpuid)
 /* -------------------------------------------------------------------------- */
 
 #define boxy_virq__vclock_event_handler 0xBF00000000000201
+#define boxy_virq__exit_event_handler 0xBF00000000000202
 
 #define hypercall_enum_virq_op__set_hypervisor_callback_vector 0xBF10000000000100
 #define hypercall_enum_virq_op__get_next_virq 0xBF10000000000101
