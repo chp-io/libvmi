@@ -5,6 +5,7 @@
  * This file is part of LibVMI.
  *
  * Author: Tamas K Lengyel <lengyelt@ainfosec.com>
+ * Author: Christopher Pelloux <git@chp.io>
  *
  * LibVMI is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -26,7 +27,9 @@
 #include <bfhypercall.h>
 
 #define BF_DEBUG(...) dbprint(VMI_DEBUG_BAREFLANK, "--BF: " __VA_ARGS__)
-#define BF_PAGE_SIZE 4096
+#define BF_ERROR(...) errprint("--BF: " __VA_ARGS__)
+
+#define BF_MAX_VCPU 1
 
 /* GPA remapping helper structs */
 typedef struct gpa_flags {
@@ -44,6 +47,17 @@ typedef struct bareflank_instance {
     uint64_t domainid;
     void *buffer_space;
     GHashTable *remaps;
+
+    // TODO multi vCPU support
+    struct bf_events_t {
+        bool has_mtf_on;
+        bool has_wrcr3_on;
+        bool has_mem_access_on;
+    } events/*[BF_MAX_VCPU]*/;
+
+    // Map vCPU # to MicroV VPID
+    // uint64_t vcpu_to_vpid[BF_MAX_VCPU];
+
 } bareflank_instance_t;
 
 static inline
@@ -52,5 +66,14 @@ bareflank_instance_t *bareflank_get_instance(
 {
     return ((bareflank_instance_t *) vmi->driver.driver_data);
 }
+
+status_t
+bareflank_init_events(
+    vmi_instance_t vmi,
+    uint32_t init_flags,
+    vmi_init_data_t *init_data);
+
+void
+bareflank_destroy_events(vmi_instance_t vmi);
 
 #endif /* BAREFLANK_PRIVATE_H */

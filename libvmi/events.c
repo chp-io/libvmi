@@ -98,6 +98,8 @@ status_t events_init(vmi_instance_t vmi)
             break;
         case VMI_XEN:
             break;
+        case VMI_BAREFLANK:
+            break;
         default:
             errprint("The selected hypervisor has no events support!\n");
             return VMI_FAILURE;
