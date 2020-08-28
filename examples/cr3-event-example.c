@@ -51,23 +51,32 @@ int main (int argc, char **argv)
     vmi_mode_t mode = {0};
     vmi_init_data_t *init_data = NULL;
     int retcode = 1;
+    int steps = 0;
+    int max_steps = INT32_MAX;
+    char *path = NULL;
 
     /* this is the VM or file that we are looking at */
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <vmname> [<socket>]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <vmname> [<socket>] [<max_step>]\n", argv[0]);
         return retcode;
     }
 
     char *name = argv[1];
 
-    if (argc == 3) {
-        char *path = argv[2];
+    if (argc >= 3 && strcmp((path = argv[2]), "none") != 0) {
+        printf("Using KVMi socket\n");
 
         // fill init_data
         init_data = malloc(sizeof(vmi_init_data_t) + sizeof(vmi_init_data_entry_t));
         init_data->count = 1;
         init_data->entry[0].type = VMI_INIT_DATA_KVMI_SOCKET;
         init_data->entry[0].data = strdup(path);
+    }
+
+    // max steps
+    if (argc == 4) {
+        max_steps = atoi(argv[3]);
+        printf("Using %d steps\n", max_steps);
     }
 
     if (VMI_FAILURE == vmi_get_access_mode(NULL, (void*)name, VMI_INIT_DOMAINNAME | VMI_INIT_EVENTS, init_data, &mode)) {
@@ -112,7 +121,7 @@ int main (int argc, char **argv)
         goto error_exit;
 
     printf("Waiting for events...\n");
-    while (!interrupted) {
+    while (!interrupted && steps++ != max_steps) {
         status = vmi_events_listen(vmi, 500);
         if (status == VMI_FAILURE)
             printf("Failed to listen on events\n");

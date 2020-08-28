@@ -62,6 +62,9 @@ int main (int argc, char **argv)
     struct sigaction act = {0};
     vmi_init_data_t *init_data = NULL;
     int retcode = 1;
+    int steps = 0;
+    int max_steps = INT32_MAX;
+    char *path = NULL;
 
     act.sa_handler = close_handler;
     act.sa_flags = 0;
@@ -79,15 +82,20 @@ int main (int argc, char **argv)
     // Arg 1 is the VM name.
     char *name = argv[1];
 
-
     // kvmi socket ?
-    if (argc == 3) {
-        char *path = argv[2];
+    if (argc >= 3 && strcmp((path = argv[2]), "none") != 0) {
+        printf("Using KVMi socket\n");
 
         init_data = malloc(sizeof(vmi_init_data_t) + sizeof(vmi_init_data_entry_t));
         init_data->count = 1;
         init_data->entry[0].type = VMI_INIT_DATA_KVMI_SOCKET;
         init_data->entry[0].data = strdup(path);
+    }
+
+    // max steps
+    if (argc == 4) {
+        max_steps = atoi(argv[3]);
+        printf("Using %d steps\n", max_steps);
     }
 
     if (VMI_FAILURE == vmi_get_access_mode(NULL, (void*)name, VMI_INIT_DOMAINNAME | VMI_INIT_EVENTS, init_data, &mode)) {
@@ -150,7 +158,7 @@ int main (int argc, char **argv)
     }
 
     printf("Waiting for events...\n");
-    while (!interrupted) {
+    while (!interrupted && steps++ != max_steps) {
         vmi_events_listen(vmi,500);
     }
     printf("Finished with test.\n");
