@@ -107,6 +107,7 @@ if WITH_BAREFLANK
 drivers     += libvmi/driver/bareflank/bareflank.h \
                libvmi/driver/bareflank/bareflank_private.h \
                libvmi/driver/bareflank/bareflank.c \
+               libvmi/driver/bareflank/bareflank_events.c \
                libvmi/driver/bareflank/bfsdk/src/intrinsics.S \
                libvmi/driver/bareflank/bfsdk/include/bfhypercall.h
 drivers_AM_CPPFLAGS += -I$(top_srcdir)/libvmi/driver/bareflank/bfsdk/include
