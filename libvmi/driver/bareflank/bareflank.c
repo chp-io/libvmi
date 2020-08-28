@@ -296,7 +296,7 @@ status_t bareflank_get_vcpureg(
     mv_uint64_t vpid = MV_VPID_PARENT; // multi-vcpu not yet supported
 
     if (vcpu != 0) {
-        BF_DEBUG("Requested vcpu id %ld not yet supported\n", vcpu);
+        BF_ERROR("Requested vcpu id %ld not yet supported\n", vcpu);
     }
 
     if (libvmi_to_microv_reg(reg, &mv_reg)) {
@@ -304,12 +304,12 @@ status_t bareflank_get_vcpureg(
     } else if (libvmi_to_microv_msr(reg, &mv_msr)) {
         ret = mv_vp_state_op_msr_val(&bf->handle, vpid, mv_msr, reg_val);
     } else {
-        BF_DEBUG("Register not yet implemented id = %ld\n", reg);
+        BF_ERROR("Register not yet implemented id = %ld\n", reg);
         return VMI_FAILURE;
     }
 
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_vp_state_op failed: REG:%ld ret:0x%lx\n", reg, ret);
+        BF_ERROR("mv_vp_state_op failed: REG:%ld ret:0x%lx\n", reg, ret);
         return VMI_FAILURE;
     }
 
@@ -329,7 +329,7 @@ bareflank_get_memory(
     gpa_remap_t map = { .src.gpa = pa };
 
     if (posix_memalign(&space, 4096, 4096)) {
-        BF_DEBUG("posix_memalign failed\n");
+        BF_ERROR("get_memroy: posix_memalign failed\n");
         return NULL;
     }
 
@@ -339,18 +339,18 @@ bareflank_get_memory(
 
     // Mark the page as non-pageable
     if (mlock2(space, 4096, MLOCK_ONFAULT) != 0) {
-        BF_DEBUG("warning: mlock2 failed\n");
+        BF_ERROR("get_memroy: mlock2 failed\n");
         return NULL;
     }
 
     ret = mv_vm_state_op_gva_to_gpa(&bf->handle, MV_VMID_SELF, ptt_gpa,
                                     (mv_uint64_t) space, &map.dst.gpa, &map.dst.flags);
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_vm_state_op_gva_to_gpa failed 0x%lx\n", ret);
+        BF_ERROR("get_memory: gva_to_gpa failed 0x%lx\n", ret);
         free(space);
         return NULL;
     }
-    BF_DEBUG("mv_vm_state_op_gva_to_gpa %p: 0x%lx\n", space, map.dst.gpa);
+    BF_DEBUG("get_memory: gva_to_gpa %p: 0x%lx\n", space, map.dst.gpa);
 
     assert((map.dst.flags & 0x00000000FFFFFFFF) == 0);
     map.dst.flags |= 1ULL; /* only 1 4k gpa */
@@ -360,7 +360,7 @@ bareflank_get_memory(
     ret = mv_vm_state_op_map_range(&bf->handle, bf->domainid, map.src.gpa,
                                    MV_VMID_SELF, map.dst.gpa, map.dst.flags);
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_vm_state_op_map_range failed 0x%lx\n", ret);
+        BF_ERROR("get_memory: map_range failed 0x%lx\n", ret);
         free(space);
         return NULL;
     }
@@ -386,7 +386,7 @@ bareflank_release_memory(
 
     /* Reverse the EPT remapping */
     if (!map) {
-        BF_DEBUG("release_memory: table lookup failed for gva 0x%p\n", memory);
+        BF_ERROR("release_memory: table lookup failed for gva 0x%p\n", memory);
         goto free;
     }
 
@@ -396,14 +396,14 @@ bareflank_release_memory(
     ret = mv_vm_state_op_unmap_range(&bf->handle, bf->domainid, map->src.gpa,
                                      MV_VMID_SELF, map->dst.gpa, map->dst.flags);
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_vm_state_op_map_range failed (0x%lx): %p: 0x%lx <- 0x%lx\n", ret, memory, map->src.gpa, map->src.gpa);
+        BF_ERROR("release_memory: map_range failed (0x%lx): %p: 0x%lx <- 0x%lx\n", ret, memory, map->src.gpa, map->src.gpa);
     }
 
     BF_DEBUG("release_memory: restored %p: 0x%lx <- 0x%lx\n", memory, map->src.gpa, map->src.gpa);
 
 #ifdef VMI_DEBUG
     if (*(uint64_t*) memory != 0xabcdef0123456789) {
-        BF_DEBUG("release_memory: magic not present 0x%lx !!!\n", *(uint64_t*) memory);
+        BF_ERROR("release_memory: magic not present 0x%lx !!!\n", *(uint64_t*) memory);
     }
 #endif
 
@@ -541,11 +541,11 @@ status_t bareflank_pause_vm(
         ret = mv_vp_management_op_pause_vp(&bf->handle, MV_VPID_PARENT);
     } else {
         // ret = mv_vm_management_op_pause_vm(&bf->handle, bf->domainid);
-        BF_DEBUG("bareflank_pause_vm: domU not yet supported id %lu\n", bf->domainid);
-        exit(1);
+        BF_ERROR("pause_vm: domU not yet supported id %lu\n", bf->domainid);
+        return VMI_FAILURE;
     }
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("bareflank_pause_vm failed with 0x%lx\n", ret);
+        BF_ERROR("pause_vm: pause_vp failed with 0x%lx\n", ret);
         return VMI_FAILURE;
     }
     return VMI_SUCCESS;
@@ -557,18 +557,18 @@ status_t bareflank_resume_vm(
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
     mv_status_t ret;
 
-    BF_DEBUG("bareflank_resume_vm called\n");
+    BF_DEBUG("resume_vm: called\n");
 
     if (bf->domainid == 0) {
         // FIXME resume VM
         ret = mv_vp_management_op_resume_vp(&bf->handle, MV_VPID_PARENT);
     } else {
         // ret = mv_vm_management_op_resume_vm(&bf->handle, bf->domainid);
-        BF_DEBUG("bareflank_resume_vm: domU not yet supported id %lu\n", bf->domainid);
-        exit(1);
+        BF_ERROR("resume_vm: domU not yet supported id %lu\n", bf->domainid);
+        return VMI_FAILURE;
     }
     if (ret != MV_STATUS_SUCCESS) {
-        BF_DEBUG("bareflank_pause_vm failed with 0x%lx\n", ret);
+        BF_ERROR("pause_vm: failed with 0x%lx\n", ret);
         return VMI_FAILURE;
     }
     return VMI_SUCCESS;
@@ -582,7 +582,7 @@ bareflank_test(
     void *UNUSED(init_data))
 {
     if (!mv_present(MV_SPEC_ID1_VAL)) {
-        BF_DEBUG("mv_present failed\n");
+        BF_ERROR("test: mv_present failed. Not running under MicroV?\n");
         return VMI_FAILURE;
     }
 
@@ -601,7 +601,7 @@ bareflank_init(
         return VMI_FAILURE;
 
     if (mv_handle_op_open_handle(MV_SPEC_ID1_VAL, &bf->handle) != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_handle_op_open failed\n");
+        BF_ERROR("init: mv_handle_op_open failed\n");
         return VMI_FAILURE;
     }
 
@@ -652,7 +652,7 @@ bareflank_destroy(
     bareflank_destroy_events(vmi);
 
     if (mv_handle_op_close_handle(&bf->handle) != MV_STATUS_SUCCESS) {
-        BF_DEBUG("mv_handle_op_close failed\n");
+        BF_ERROR("mv_handle_op_close failed\n");
     }
 
     memory_cache_destroy(vmi);
