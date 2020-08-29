@@ -139,6 +139,11 @@ argument.
    cd build
    cmake .. -DENABLE_KVM_LEGACY
 
+Bareflank support
+~~~~~~~~~~~~~~~~~
+
+Bareflank Boxy / MicroV support was added during GSoC20.
+Please follow the [Bareflank readme](libvmi/driver/bareflank/README.md).
 
 Python bindings
 ----------------
