@@ -534,7 +534,12 @@ status_t bareflank_pause_vm(
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
     mv_status_t ret;
 
-    BF_DEBUG("bareflank_pause_vm called\n");
+    if (bf->is_paused) {
+        BF_DEBUG("pause_vm: already paused");
+        return VMI_SUCCESS;
+    }
+
+    BF_DEBUG("pause_vm: called\n");
 
     if (bf->domainid == 0) {
         // FIXME pause VM
@@ -548,6 +553,7 @@ status_t bareflank_pause_vm(
         BF_ERROR("pause_vm: pause_vp failed with 0x%lx\n", ret);
         return VMI_FAILURE;
     }
+    bf->is_paused = true;
     return VMI_SUCCESS;
 }
 
@@ -556,6 +562,11 @@ status_t bareflank_resume_vm(
 {
     bareflank_instance_t *bf = bareflank_get_instance(vmi);
     mv_status_t ret;
+
+    if (!bf->is_paused) {
+        BF_DEBUG("resume_vm: already running");
+        return VMI_SUCCESS;
+    }
 
     BF_DEBUG("resume_vm: called\n");
 
@@ -571,6 +582,7 @@ status_t bareflank_resume_vm(
         BF_ERROR("pause_vm: failed with 0x%lx\n", ret);
         return VMI_FAILURE;
     }
+    bf->is_paused = false;
     return VMI_SUCCESS;
 }
 

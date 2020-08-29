@@ -47,6 +47,7 @@ typedef struct bareflank_instance {
     uint64_t domainid;
     void *buffer_space;
     GHashTable *remaps;
+    bool is_paused;
 
     // TODO multi vCPU support
     struct bf_events_t {
